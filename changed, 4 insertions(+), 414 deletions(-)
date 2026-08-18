@@ -1,0 +1,29 @@
+ mvnw                                    |   0
+ .../Pendingassignmentslist.jsx          | 191 [31m--------------[m
+ .../dashboard/Ticketstrendchart.jsx     |  96 [31m-------[m
+ .../pages/Tickets/ticketDetailsPage.jsx | 127 [31m---------[m
+ .../resources/application.properties    |   2 [32m+[m
+ .../AnomalyGeneratorScheduler.class     | Bin [31m5598[m -> [32m5586[m bytes
+ .../controllers/AnomalyController.class | Bin [31m1897[m -> [32m1897[m bytes
+ .../TechnicianController.class          | Bin [31m4773[m -> [32m4773[m bytes
+ ...Controller$StatusChangeRequest.class | Bin [31m1568[m -> [32m1761[m bytes
+ ...roller$TechnicianReportRequest.class | Bin [31m1840[m -> [32m2077[m bytes
+ ...Controller$UpdateStatusRequest.class | Bin [31m1666[m -> [32m1859[m bytes
+ .../TechnicianTicketController.class    | Bin [31m11186[m -> [32m11202[m bytes
+ .../controllers/TicketController.class  | Bin [31m4962[m -> [32m4962[m bytes
+ .../ticketAssignmentController.class    | Bin [31m4552[m -> [32m4576[m bytes
+ .../demo/dto/TechnicianTicketDTO.class  | Bin [31m7815[m -> [32m8185[m bytes
+ .../anomaly/InverterAnomaly.class       | Bin [31m5684[m -> [32m5603[m bytes
+ .../entity/equipement/Equipment.class   | Bin [31m8027[m -> [32m8018[m bytes
+ .../demo/entity/ticket/Ticket.class     | Bin [31m12373[m -> [32m12364[m bytes
+ .../demo/entity/user/Technician.class   | Bin [31m5927[m -> [32m5916[m bytes
+ .../anomaly/AnomalyRepository.class     | Bin [31m1103[m -> [32m1103[m bytes
+ .../User/TechnicianService.class        | Bin [31m7916[m -> [32m7916[m bytes
+ .../anomaly/AnomalyPollingService.class | Bin [31m2761[m -> [32m2755[m bytes
+ .../anomaly/AnomalyService.class        | Bin [31m1777[m -> [32m1777[m bytes
+ .../service/reports/ReportService.class | Bin [31m6790[m -> [32m6725[m bytes
+ .../TicketAssignmentService.class       | Bin [31m6583[m -> [32m6515[m bytes
+ .../service/ticket/TicketService.class  | Bin [31m16023[m -> [32m15759[m bytes
+ .../ticket/TicketUpdateService.class    | Bin [31m9141[m -> [32m9048[m bytes
+ .../test-classes/application.properties |   2 [32m+[m
+ 28 files changed, 4 insertions(+), 414 deletions(-)
