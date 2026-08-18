@@ -1,40 +1,50 @@
 import React, { useRef, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
-import * as Notifications from 'expo-notifications';
-
+import { isExpoGo, getNotificationsModule } from './src/services/notificationsCompat';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoginScreen from './src/features/auth/LoginScreen';
 import { colors } from './src/theme/theme';
 
-// Configure how notifications behave while the app is open (in foreground)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// 1. Safely configure how notifications behave (ONLY if NOT in Expo Go)
+if (!isExpoGo) {
+  const Notifications = getNotificationsModule();
+  if (Notifications) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }
+}
 
 function AppShell() {
   const { user, isLoading } = useAuth();
   const navigationRef = useRef(null);
 
-  //  HANDLE NOTIFICATION CLICKS
+  // 2. Handle notification clicks (Safely guarded)
   useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    // If we are in Expo Go, skip this entirely to avoid the native crash
+    if (isExpoGo) return;
+
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const { ticketId } = response.notification.request.content.data;
       
       if (ticketId && navigationRef.current) {
-        // Navigate directly to the Ticket Detail screen
         navigationRef.current.navigate('Today', {
           screen: 'TicketDetail',
-          params: { ticketId: ticketId }
+          params: { ticketId },
         });
       }
     });
 
+    // Cleanup listener when the component unmounts
     return () => subscription.remove();
   }, []);
 
@@ -51,7 +61,6 @@ function AppShell() {
   }
 
   return (
-    // ATTACH THE REF TO THE NAVIGATION CONTAINER
     <NavigationContainer ref={navigationRef}>
       <AppNavigator />
     </NavigationContainer>

@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -24,14 +25,17 @@ public class TicketAssignment {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id", nullable = false)
+    @ToString.Exclude
     private Ticket ticket;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "technician_id", nullable = false)
+    @ToString.Exclude
     private Technician technician;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "administrator_id", nullable = false)
+    @ToString.Exclude
     private Administrator administrator;
 
     @Column(nullable = false)

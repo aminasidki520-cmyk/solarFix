@@ -50,11 +50,13 @@ public class Ticket {
     private Anomaly anomaly;
     @ManyToOne
     @JoinColumn(name = "administrator_id")
+    @ToString.Exclude
     private Administrator administrator;
 /**Administrator–Technician–Ticket → TicketAssignment**/
     @OneToMany(mappedBy = "ticket",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @ToString.Exclude
     private List<TicketAssignment> assignments = new ArrayList<>();
 
 

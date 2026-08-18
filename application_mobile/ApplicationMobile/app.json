@@ -20,9 +20,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff",
         "usesCleartextTraffic": true,
-      "useNextNotificationsApi": true
+        "useNextNotificationsApi": true
       },
-
       "edgeToEdgeEnabled": true,
       "usesCleartextTraffic": true,
       "package": "com.anonymous.ApplicationMobile"
@@ -31,7 +30,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar","expo-notifications"
-    ]
+      "expo-status-bar",
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8dbaa4b7-659b-45cd-b8d9-5a9185a80b4d"
+      }
+    }
   }
 }

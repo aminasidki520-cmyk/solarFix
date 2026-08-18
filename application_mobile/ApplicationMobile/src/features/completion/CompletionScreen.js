@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// npx expo install expo-camera expo-location
-import * as Location from 'expo-location';
-import { useCameraPermissions } from 'expo-camera';
 import { submitReport } from '../../services/reportService';
 import { getTicketById } from '../../services/ticketService';
 import { colors, radii, spacing, typography, shadow } from '../../theme/theme';
@@ -11,10 +8,6 @@ import { colors, radii, spacing, typography, shadow } from '../../theme/theme';
 import CompletionHeroHeader from './components/CompletionHeroHeader';
 import OutcomeOptionsList from './components/OutcomeOptionsList';
 import RepairNotesCard from './components/RepairNotesCard';
-import PhotoCard from './components/PhotoCard';
-
-// Same submission logic as before: sends { outcome, notes, photoUrl } to
-// POST /api/technician/tickets/{id}/report — only the UI changed.
 
 export default function CompletionScreen({ route, navigation }) {
   const ticketId = route.params?.ticketId;
@@ -24,14 +17,9 @@ export default function CompletionScreen({ route, navigation }) {
   const [isLoadingTicket, setIsLoadingTicket] = useState(!!ticketId);
 
   const [notes, setNotes] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
   const [selectedCode, setSelectedCode] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [permission, requestPermission] = useCameraPermissions();
-  const [photoUrl, setPhotoUrl] = useState(null);
 
-  // Fetches the full ticket so the hero header can show site/equipment —
-  // route params only carry ticketId + a title.
   useEffect(() => {
     if (!ticketId) return;
     (async () => {
@@ -39,7 +27,6 @@ export default function CompletionScreen({ route, navigation }) {
         const data = await getTicketById(ticketId);
         setTicket(data);
       } catch (err) {
-        // non-fatal: header falls back to the title passed via route params
         setTicket(ticketTitleParam ? { ticketId, title: ticketTitleParam } : null);
       } finally {
         setIsLoadingTicket(false);
@@ -47,42 +34,23 @@ export default function CompletionScreen({ route, navigation }) {
     })();
   }, [ticketId]);
 
-  const handleVoiceButton = () => {
-    setIsRecording((prev) => !prev);
-    if (isRecording) {
-      setNotes((prev) => prev + (prev ? ' ' : '') + '[transcribed text here]');
-    }
-  };
-
-  const handleTakePhoto = async () => {
-    if (!permission?.granted) {
-      const res = await requestPermission();
-      if (!res.granted) return;
-    }
-    const loc = await Location.getCurrentPositionAsync({});
-    // TODO: capture with a real CameraView ref and upload the file,
-    // then set the real URL. Placeholder string for now, per your setup.
-    setPhotoUrl('local-placeholder-uri');
-    Alert.alert('Photo tagged', `Lat ${loc.coords.latitude.toFixed(4)}, Lng ${loc.coords.longitude.toFixed(4)}`);
-  };
-
   const handleSubmit = async () => {
     if (!ticketId) {
       Alert.alert('Missing ticket', 'This screen needs to be opened from a ticket.');
       return;
     }
     if (!selectedCode) {
-      Alert.alert('Select an outcome', 'Choose Fixed, Needs Part, Rescheduled, or Escalate.');
+      Alert.alert('Select an outcome', 'Choose Fixed or Escalate.');
       return;
     }
     if (!notes.trim()) {
-      Alert.alert('Add notes', 'Write or dictate a short note before submitting.');
+      Alert.alert('Add notes', 'Please add a note before submitting.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await submitReport(ticketId, { outcome: selectedCode, notes, photoUrl });
+      await submitReport(ticketId, { outcome: selectedCode, notes });
       Alert.alert('Submitted', 'Job report sent.');
       navigation.navigate('Dashboard');
     } catch (err) {
@@ -109,16 +77,7 @@ export default function CompletionScreen({ route, navigation }) {
         </View>
 
         <View style={styles.section}>
-          <RepairNotesCard
-            value={notes}
-            onChangeText={setNotes}
-            isRecording={isRecording}
-            onMicPress={handleVoiceButton}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <PhotoCard hasPhoto={!!photoUrl} onAddPhoto={handleTakePhoto} />
+          <RepairNotesCard value={notes} onChangeText={setNotes} />
         </View>
       </ScrollView>
 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../../../components/ui';
 import { colors, radii, spacing, typography } from '../../../theme/theme';
 
-export default function RepairNotesCard({ value, onChangeText, isRecording, onMicPress }) {
+export default function RepairNotesCard({ value, onChangeText }) {
   return (
     <Card>
       <View style={styles.sectionHeader}>
@@ -23,13 +23,6 @@ export default function RepairNotesCard({ value, onChangeText, isRecording, onMi
           placeholderTextColor={colors.textMuted}
           multiline
         />
-        <TouchableOpacity
-          style={[styles.micButton, isRecording && styles.micButtonActive]}
-          onPress={onMicPress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="mic" size={18} color={isRecording ? colors.white : colors.primary} />
-        </TouchableOpacity>
       </View>
     </Card>
   );
@@ -57,18 +50,5 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     minHeight: 60,
     textAlignVertical: 'top',
-    paddingRight: 44,
   },
-  micButton: {
-    position: 'absolute',
-    right: spacing.sm,
-    bottom: spacing.sm,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primaryTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micButtonActive: { backgroundColor: colors.primary },
 });

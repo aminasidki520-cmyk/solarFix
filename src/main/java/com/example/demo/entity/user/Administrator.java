@@ -4,10 +4,7 @@ import com.example.demo.entity.report.Report;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.demo.entity.ticket.TicketAssignment;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +33,7 @@ public class Administrator extends User {
     @OneToMany(mappedBy = "administrator",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
+    @ToString.Exclude
     private List<TicketAssignment> assignments = new ArrayList<>();
 
     /**

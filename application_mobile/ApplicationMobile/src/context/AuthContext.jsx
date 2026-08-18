@@ -13,11 +13,15 @@ export function AuthProvider({ children }) {
     (async () => {
       const session = await authApi.getStoredSession();
       if (session) {
-        setUser({ username: session.username, role: session.role });
-        await registerForPushNotificationsAsync();
-        connectWebSocket(session.username, (newTicketData) => {
-          console.log("New ticket detected in background:", newTicketData);
-        });
+       setUser({ username: session.username, role: session.role });
+  try {
+    await registerForPushNotificationsAsync(); 
+  } catch (error) {
+    console.warn('Push registration not supported in Expo Go:', error.message);
+  }
+  connectWebSocket(session.username, (newTicketData) => {
+    console.log("New ticket detected in background:", newTicketData);
+  }); 
       }
       setIsLoading(false);
     })();
@@ -35,10 +39,14 @@ export function AuthProvider({ children }) {
 
       setUser({ username: result.username, role: result.role });
 
-       await registerForPushNotificationsAsync();
-      connectWebSocket(username, (newTicketData) => {
-        console.log("New ticket detected:", newTicketData);
-      });
+try {
+  await registerForPushNotificationsAsync();
+} catch (error) {
+  console.warn('Push registration not supported in Expo Go:', error.message);
+}
+connectWebSocket(username, (newTicketData) => {
+  console.log("New ticket detected:", newTicketData);
+});
       return result;
     } catch (error) {
       console.error("Login error:", error.message);

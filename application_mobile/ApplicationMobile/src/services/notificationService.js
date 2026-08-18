@@ -1,45 +1,53 @@
-import * as Notifications from 'expo-notifications';
+// src/services/notificationService.js
 import * as Device from 'expo-device';
+import { isExpoGo, getNotificationsModule } from './notificationsCompat';
 
 let ws = null;
 
 export async function registerForPushNotificationsAsync() {
-  if (!Device.isDevice) return;
-  const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return;
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
-  console.log('📱 Expo Push Token:', token);
-  return token;
+  if (!Device.isDevice) return null;
+
+  // Skip entirely in Expo Go — never call require('expo-notifications') here,
+  // which avoids the module's own internal console.error noise.
+  if (isExpoGo) {
+    console.log('Skipping push registration: not supported in Expo Go.');
+    return null;
+  }
+
+  const Notifications = getNotificationsModule();
+  if (!Notifications) return null;
+
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') return null;
+
+    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log('📱 Expo Push Token:', token);
+    return token;
+  } catch (error) {
+    console.warn('Push registration failed:', error.message);
+    return null;
+  }
 }
 
 export function connectWebSocket(username, onNewTicketCallback) {
   if (ws) return;
 
-  // 🚀 Use your PC's IP address here
-  const WS_URL = `ws://192.168.100.140:8082/ws`; 
-
+  const WS_URL = `ws://10.43.28.108:8082/ws`;
   ws = new WebSocket(WS_URL);
 
   ws.onopen = () => console.log('✅ WebSocket connected for:', username);
 
   ws.onmessage = (event) => {
     try {
-      // Backend sends a String, but we want it as an object for navigation
-      const data = { 
-        title: "New Ticket Assigned!", 
-        message: event.data, // Simple string for now
-        ticketId: extractTicketId(event.data) // Need logic to pull ID from string
+      const data = {
+        title: 'New Ticket Assigned!',
+        message: event.data,
+        ticketId: extractTicketId(event.data),
       };
+
       onNewTicketCallback(data);
-      
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: data.title,
-          body: data.message,
-          data: { ticketId: data.ticketId },
-        },
-        trigger: null,
-      });
+      showLocalNotification(data);
     } catch (error) {
       console.error('WebSocket parsing error:', error);
     }
@@ -51,12 +59,37 @@ export function connectWebSocket(username, onNewTicketCallback) {
   };
 }
 
-export function disconnectWebSocket() {
-  if (ws) { ws.close(); ws = null; }
+function showLocalNotification(data) {
+  if (isExpoGo) {
+    console.log('Expo Go: local notification skipped (works in a dev/standalone build).');
+    return;
+  }
+
+  const Notifications = getNotificationsModule();
+  if (!Notifications) return;
+
+  try {
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: data.title,
+        body: data.message,
+        data: { ticketId: data.ticketId },
+      },
+      trigger: null,
+    });
+  } catch (e) {
+    console.warn('Local notification failed:', e.message);
+  }
 }
 
-// Helper to extract ID from your string "Ticket #1234 - Title"
+export function disconnectWebSocket() {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+}
+
 function extractTicketId(message) {
   const match = message.match(/Ticket #(\d+)/);
-  return match ? parseInt(match[1]) : null;
+  return match ? parseInt(match[1], 10) : null;
 }

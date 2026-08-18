@@ -5,8 +5,6 @@ import { colors, radii, spacing, typography, shadow } from '../../../theme/theme
 
 const OUTCOMES = [
   { key: 'FIXED', label: 'Fixed', icon: 'checkmark-circle' },
-  { key: 'NEEDS_PART', label: 'Needs Part', icon: 'construct-outline' },
-  { key: 'RESCHEDULED', label: 'Rescheduled', icon: 'calendar-outline' },
   { key: 'ESCALATE', label: 'Escalate', icon: 'warning-outline' },
 ];
 

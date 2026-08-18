@@ -1,13 +1,17 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dto.TechnicianTicketDTO;
+import com.example.demo.entity.anomaly.Anomaly;
 import com.example.demo.entity.report.CreateReportRequest;
 import com.example.demo.entity.report.ReportResponse;
 import com.example.demo.entity.report.ReportStatus;
 import com.example.demo.entity.ticket.AssignmentStatus;
+import com.example.demo.entity.ticket.Ticket;
 import com.example.demo.entity.ticket.TicketAssignment;
 import com.example.demo.entity.ticket.TicketStatus;
 import com.example.demo.entity.user.Technician;
+import com.example.demo.repository.anomaly.AnomalyRepository;
+import com.example.demo.service.User.TechnicianService;
 import com.example.demo.repository.ticket.TicketAssignmentRepository;
 import com.example.demo.repository.user.TechnicianRepository;
 import com.example.demo.service.reports.ReportService;
@@ -46,6 +50,11 @@ public class TechnicianTicketController {
 
     @Autowired
     private TicketService ticketService;
+    @Autowired
+    private TechnicianService technicianService;
+    @Autowired
+    private AnomalyRepository anomalyRepository;
+
 
     // -----------------------------------------------------------------
     // GET /api/technician/tickets
@@ -120,32 +129,69 @@ public class TechnicianTicketController {
     // and translates it into the EXISTING CreateReportRequest shape before
     // calling the existing ReportService — no duplicate report pipeline.
     // -----------------------------------------------------------------
-    @PostMapping("/tickets/{id}/report")
+        @PostMapping("/tickets/{id}/report")
     @PreAuthorize("hasRole('TECHNICIAN')")
-    public ResponseEntity<ReportResponse> submitReport(@PathVariable Long id,
-                                                       @RequestBody TechnicianReportRequest request,
-                                                       Authentication authentication) {
+    public ResponseEntity<?> submitReport(@PathVariable Long id,
+                                          @RequestBody TechnicianReportRequest request,
+                                          Authentication authentication) {
+        // 1. Verify technician and the approved assignment
         Technician technician = resolveTechnician(authentication);
-        findOwnApprovedAssignment(id, technician);
+        TicketAssignment assignment = findOwnApprovedAssignment(id, technician);
+        Ticket currentTicket = assignment.getTicket();
 
+        // 2. Create the technical report (shared by both outcomes)
         CreateReportRequest createReportRequest = new CreateReportRequest(
                 "Technician Report for Ticket #" + id,
                 request.outcome() + " - " + request.notes(),
                 id
         );
-
-        // 1. Création du rapport
         var report = reportService.createReport(createReportRequest, technician);
 
-        // 🚀 NOUVEAU : Si le technicien a réparé, on saute l'approbation admin et on résout le ticket
+        // 3. Handle the "FIXED" outcome
         if ("FIXED".equalsIgnoreCase(request.outcome())) {
-            // Approuver le rapport immédiatement (tu auras besoin d'une méthode approveReport dans ReportService)
-            reportService.approveReport(report.getReportId());
-            // Passer le ticket à RESOLVED
-            ticketService.updateTicketStatus(id, TicketStatus.RESOLVED);
+            reportService.approveReport(report.getReportId()); // Auto-approve the report
+            ticketService.updateTicketStatus(id, TicketStatus.RESOLVED); // Resolve the ticket instantly
+            
+            return ResponseEntity.ok("Ticket #" + id + " has been successfully resolved.");
         }
 
-        return ResponseEntity.ok(ReportResponse.fromEntity(report));
+        // 4. Handle the "ESCALATE" outcome
+        else if ("ESCALATE".equalsIgnoreCase(request.outcome())) {
+            // A. Get the anomaly from the current ticket
+            Anomaly originalAnomaly = currentTicket.getAnomaly();
+
+            // 🚀 FIX: Create a duplicate of the anomaly so we can use it for the new ticket
+            Anomaly newAnomaly = new Anomaly();
+            newAnomaly.setAnomalyType(originalAnomaly.getAnomalyType());
+            newAnomaly.setGeometry(originalAnomaly.getGeometry());
+            newAnomaly.setSeverity(originalAnomaly.getSeverity());
+            newAnomaly.setRegion(originalAnomaly.getRegion());
+            newAnomaly.setStartAt(originalAnomaly.getStartAt());
+            newAnomaly.setEquipment(originalAnomaly.getEquipment());
+            newAnomaly.setProcessed(false); // Important: resets processed flag
+
+            // Save the new anomaly to the database first
+            Anomaly persistedNewAnomaly = anomalyRepository.save(newAnomaly);
+
+            // B. Find the best available technician for this region (using the new anomaly's region)
+            Technician newTechnician = technicianService.findBestTechnician(persistedNewAnomaly.getRegion());
+
+            // C. Create a brand new ticket using the NEW anomaly!
+            Ticket escalatedTicket = ticketService.createTicket(persistedNewAnomaly);
+
+            // D. Add a note to the new ticket linking back to the old one
+            ticketService.addTicketUpdate(
+                    escalatedTicket.getTicketId(),
+                    "Escalated from previous ticket #" + id
+            );
+
+            // E. (Optional) You can close the old ticket or mark it as escalated
+            // ticketService.updateTicketStatus(id, TicketStatus.CLOSED);
+
+            return ResponseEntity.ok("Ticket escalated. A new ticket (ID: " + escalatedTicket.getTicketId() + ") has been assigned to a new technician.");
+        }
+        // 5. Default fallback if the outcome is invalid
+        return ResponseEntity.badRequest().body("Invalid outcome. Please select 'FIXED' or 'ESCALATE'.");
     }
 
     // -----------------------------------------------------------------
