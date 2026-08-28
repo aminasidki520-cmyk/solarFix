@@ -1,6 +1,8 @@
 package com.example.demo.service.ticket;
 
 import com.example.demo.entity.anomaly.Anomaly;
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.entity.equipement.Equipment;
 import com.example.demo.entity.report.Report;
 import com.example.demo.entity.user.Administrator;
@@ -127,7 +129,7 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Anomaly not found"));
 
         if (anomaly.getTicket() != null) {
-            throw new RuntimeException("This anomaly is already linked to a ticket");
+            throw new BusinessException("This anomaly is already linked to a ticket");
         }
 
         Ticket ticket = new Ticket();
@@ -175,7 +177,7 @@ public class TicketService {
     @Transactional
     public Ticket getTicketById(Long id){
         return ticketRepository.findByIdWithAssignmentsAndTechnician(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
     }
 
 
@@ -217,7 +219,7 @@ public class TicketService {
         }
     }
     public void deleteTicket(Long ticketId) {
-        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new RuntimeException("Ticket not found"));
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
         Anomaly anomaly=ticket.getAnomaly();
         if(anomaly !=null){
             anomaly.setTicket(null);
