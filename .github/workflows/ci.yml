@@ -34,8 +34,5 @@ jobs:
           javac -version
           ./mvnw -version
 
-      - name: Run tests
-        run: ./mvnw test
-
-      - name: Build application
-        run: ./mvnw package -DskipTests
+      - name: Build and verify
+        run: ./mvnw clean verify
