@@ -23,3 +23,4 @@ dist/
 Thumbs.db
 # Maven
 target/
+backup_before_devsecops.sql

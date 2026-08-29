@@ -1,19 +1,39 @@
 services:
+
   db:
     container_name: solar_postgres
     image: postgres:15
+
     environment:
-      # The container will create this database and user on first run
       POSTGRES_USER: solar_db
       POSTGRES_PASSWORD: solar_db_123
       POSTGRES_DB: technician
       PGDATA: /var/lib/postgresql/data/pgdata
+
     volumes:
       - solar_db_volume:/var/lib/postgresql/data
+
     ports:
       - "5432:5432"
+
     networks:
       - solar_network
+
+    restart: unless-stopped
+
+  app:
+    container_name: solarfix_app
+    image: solarfix-app:1.0
+
+    ports:
+      - "8082:8082"
+
+    depends_on:
+      - db
+
+    networks:
+      - solar_network
+
     restart: unless-stopped
 
 networks:

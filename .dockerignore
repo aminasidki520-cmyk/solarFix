@@ -1,0 +1,9 @@
+target/*.original
+target/test-classes/
+.git/
+.github/
+node_modules/
+solarfixWebsite/node_modules/
+application_mobile/node_modules/
+backup_before_devsecops.sql
+*.log
