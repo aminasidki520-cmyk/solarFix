@@ -16,7 +16,7 @@ jobs:
 
   docker:
     name: Build and Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
 
     permissions:
       contents: read
@@ -68,38 +68,53 @@ jobs:
 
 
   deploy:
-    name: Deploy to Production Server
+    name: Deploy on Self-Hosted Server
     needs: docker
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
 
     steps:
 
-      - name: Prepare SSH
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Verify server environment
         run: |
-          mkdir -p ~/.ssh
+          echo "===== SERVER ====="
+          hostname
 
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "===== USER ====="
+          whoami
 
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+          echo "===== DIRECTORY ====="
+          pwd
+
+          echo "===== DOCKER ====="
+          docker --version
+
+          echo "===== DOCKER COMPOSE ====="
+          docker compose version
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+          docker login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
 
       - name: Deploy application
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          ssh -i ~/.ssh/deploy_key \
-            ${SERVER_USER}@${SERVER_HOST} \
-            "export GHCR_USERNAME='${GHCR_USERNAME}' \
-             GHCR_READ_TOKEN='${GHCR_READ_TOKEN}' \
-             IMAGE_TAG='${IMAGE_TAG}' && \
-             cd ~/solarFix && \
-             echo \"\$GHCR_READ_TOKEN\" | docker login ghcr.io \
-               -u \"\$GHCR_USERNAME\" \
-               --password-stdin && \
-             docker compose pull && \
-             docker compose up -d && \
-             docker image prune -f"
+          cd ~/solarFix
+
+          export IMAGE_TAG="${{ github.sha }}"
+
+          docker compose pull
+
+          docker compose up -d
+
+          docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          cd ~/solarFix
+
+          docker compose ps
